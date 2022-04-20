@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from colorama import Fore, Back, Style
 
 thread = input("Enter thread's full link: ")
-#thread = "https://boards.4chan.org/gif/thread/22500259/creep-thread-unsauceable-edition"
 
 #get thread board
 boardStart = thread.find('org/', 0)
