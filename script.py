@@ -1,8 +1,12 @@
 import requests
 import urllib.request
 import os
+import re
+from bs4 import BeautifulSoup
+from colorama import Fore, Back, Style
 
-thread = input("Enter thread's full link: ") #ex: https://boards.4channel.org/wsg/thread/4346206/webms-with-sound-for-other-boards
+thread = input("Enter thread's full link: ")
+#thread = "https://boards.4chan.org/gif/thread/22500259/creep-thread-unsauceable-edition"
 
 #get thread board
 boardStart = thread.find('org/', 0)
@@ -23,49 +27,41 @@ print('thread name: ' + str(threadName))
 
 #get path
 path = os.getcwd() + '/' + threadName
-os.mkdir(path)
 
+print(str(os.path.isdir(threadName)))
 
+if os.path.isdir(threadName) == False:
+    os.mkdir(path)
+
+#get html source
 r = requests.get(thread)
 htmlSource = r.text
 
-link_part1 = '<a href="//i.4cdn.org/' + board + '/'
-xt1 = '.webm'
-xt2 = '.gif'
+soup = BeautifulSoup(htmlSource, "html.parser")
 
-counter = htmlSource.count(link_part1)
-indexStart = 0
-i = 1
+c = 0
+varOld = ''
 
-while i <= counter:
+for link in soup.findAll('a'):
 
-    #gets 1st index
-    indexStart = htmlSource.find(link_part1, indexStart + 1)
-    
-    #check closest extension
-    end1 = htmlSource.find(xt1, indexStart)
-    end2 = htmlSource.find(xt2, indexStart)
+    var = link.get('href')
 
-    if end1 > end2:
-        indexEnd = end2
-        size = len(xt2)
-    else:
-        indexEnd = end1
-        size = len(xt1)
+    if ".webm" in var or ".gif" in var or ".png" in var or ".jpg" in var or ".jpeg" in var:
 
-    indexStart += 11
-    indexEnd += size
-    url = htmlSource[indexStart:indexEnd]
+        if varOld != var: #not copying duplicates
+        
+            fileName = var.replace('//i.4cdn.org/' + board + '/', '')
+            fullFileName = path + '/' + fileName
 
-    fileName = url.replace('i.4cdn.org/' + board + '/', '')
+            url = 'https:' + var
+            
+            #check if file already exists (duplicate thread or something)
+            if os.path.isfile(fullFileName) == True:
+                print(Fore.WHITE + str(url) + Fore.RED + ' - already exists. skipping file.')
+            else:
+                urllib.request.urlretrieve(url, fullFileName)
+                print(Fore.WHITE + str(url) + Fore.GREEN + ' - downloaded.')
 
-    url = 'https://' + url
-    
-    print(url)
-    print(fileName)
+        varOld = var
 
-    fullFileName = path + '/' + fileName
-    
-    urllib.request.urlretrieve(url, fullFileName)
-
-    i += 1
+print(Fore.WHITE + 'finished.')
